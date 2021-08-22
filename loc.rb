@@ -34,6 +34,7 @@ puts "Found #{repos.count} repos. Counting..."
 
 reports = []
 repos.each do |repo|
+  next if repo.archived
   puts "Counting #{repo.name}..."
 
   destination = File.expand_path repo.name, tmp_dir
@@ -44,11 +45,11 @@ repos.each do |repo|
   output, status = Open3.capture2e "git", "clone", "--depth", "1", "--quiet", clone_url, destination
   next unless status.exitstatus == 0
 
-  output, status = cloc destination, "--quiet", "--report-file=#{report_file}"
+  output, status = cloc destination, "--quiet", "--report-file=#{report_file}", "--exclude-ext=csv,json,jsonl"
   reports.push(report_file) if File.exists?(report_file) && status.exitstatus == 0
 end
 
-puts "Done. Summing..."
+puts "Done, #{reports.count} non archived repos. Summing..."
 
 output, status = cloc "--sum-reports", *reports
 puts output.gsub(/^#{Regexp.escape tmp_dir}\/(.*)\.txt/)  { $1 + " " * (tmp_dir.length + 5) }
